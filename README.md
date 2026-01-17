@@ -221,4 +221,4 @@ MLX is used internally for vector operations when available.
 
 ## License
 
-MIT
+AGPL-3.0 - See [LICENSE](LICENSE) for details.
