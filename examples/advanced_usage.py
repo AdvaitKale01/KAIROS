@@ -22,11 +22,22 @@ def main():
     print("KAIROS Memory - Advanced Usage Example")
     print("=" * 70)
     
+    # Initialize embedding model
+    embedding_model = None
+    try:
+        from sentence_transformers import SentenceTransformer
+        print("Loading embedding model...")
+        embedding_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+        print("✅ Embedding model loaded")
+    except ImportError:
+        print("⚠️  sentence-transformers not installed. Using fallback hash encoding.")
+
     # Initialize memory system
     memory = KAIROSMemory(
         storage_path="./example_memory_advanced",
         use_multidim=True,
-        enable_feedback=True
+        enable_feedback=True,
+        embedding_model=embedding_model
     )
     
     # Store a large dataset of conversation exchanges with emotions

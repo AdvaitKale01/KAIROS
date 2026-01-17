@@ -7,7 +7,7 @@ Key CLaRa principle: Joint optimization with generator for better retrieval.
 Multi-dimensional encoding with emotional + temporal context.
 """
 import numpy as np
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 import hashlib
 import time
 
@@ -15,6 +15,7 @@ import time
 from .utils import gpu_lock, logger
 
 # Sentence transformer for semantic embeddings
+# Sentence transformer availability check is no longer needed for internal loading
 try:
     from sentence_transformers import SentenceTransformer
     SENTENCE_TRANSFORMER_AVAILABLE = True
@@ -57,25 +58,26 @@ class QueryEncoder:
         'stressed': {'pleasure': -0.5, 'arousal': 0.7, 'category': 'negative'},
     }
     
-    def __init__(self, embedding_dim: int = 384, multidim_dim: int = 408):
+    def __init__(self, embedding_dim: int = 384, multidim_dim: int = 408, embedding_model: Optional[Any] = None):
         """
         Initialize query encoder.
         
         Args:
             embedding_dim: Dimension of semantic latent space
             multidim_dim: Dimension of full multi-dimensional space (408)
+            embedding_model: External embedding model (must implement encode method)
         """
         self.embedding_dim = embedding_dim
         self.multidim_dim = multidim_dim
         self.feedback_scores: Dict[str, float] = {}  # Track retrieval quality
         
-        # Load same model as compressor for consistent latent space
-        if SENTENCE_TRANSFORMER_AVAILABLE:
-            self.encoder = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
-            logger.debug("Loaded sentence-transformers/all-MiniLM-L6-v2")
+        # Use provided model or fallback
+        if embedding_model:
+            self.encoder = embedding_model
+            logger.debug(f"Using provided external embedding model: {type(embedding_model).__name__}")
         else:
             self.encoder = None
-            logger.warning("sentence-transformers not available. Using fallback hash encoding")
+            logger.warning("No embedding model provided. Using fallback hash encoding. Provide an embedding_model for semantic search.")
         
         # Multi-dimensional encoder for emotional + temporal
         self.multidim_encoder = MultiDimensionalEncoder()
@@ -105,8 +107,10 @@ class QueryEncoder:
                 )
         else:
             # Fallback: Hash-based
-            query_hash = hashlib.sha256(full_query.encode()).digest()
-            query_vector = np.frombuffer(query_hash, dtype=np.float32)[:self.embedding_dim]
+            # Use deterministic random generation based on hash to produce full 384d vector
+            seed = int(hashlib.sha256(full_query.encode()).hexdigest(), 16) % (2**32)
+            rng = np.random.RandomState(seed)
+            query_vector = rng.randn(self.embedding_dim).astype(np.float32)
             query_vector = query_vector / (np.linalg.norm(query_vector) + 1e-8)
         
         return query_vector

@@ -19,10 +19,21 @@ def main():
     print("\nThis demo shows how compression ratios improve with longer texts.")
     print("Vectors are fixed-size (1632 bytes), so longer texts achieve higher compression.\n")
     
+    # Initialize embedding model (needed for realistic compression)
+    embedding_model = None
+    try:
+        from sentence_transformers import SentenceTransformer
+        print("Loading embedding model...")
+        embedding_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+        print("✅ Embedding model loaded")
+    except ImportError:
+        print("⚠️  sentence-transformers not installed. Compression ratios may be inaccurate with hash fallback.")
+
     memory = KAIROSMemory(
         storage_path="./example_memory_compression",
         use_multidim=True,
-        enable_feedback=False
+        enable_feedback=False,
+        embedding_model=embedding_model
     )
     
     # Create examples with varying text lengths to demonstrate compression scaling

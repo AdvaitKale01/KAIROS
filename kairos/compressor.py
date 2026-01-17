@@ -6,7 +6,7 @@ Inspired by Apple CLaRa's semantic compression approach.
 Achieves 16-128x compression while preserving reasoning signals.
 """
 import numpy as np
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 import hashlib
 import json
 import re
@@ -15,6 +15,7 @@ import re
 from .utils import gpu_lock, logger
 
 # Sentence transformer for semantic embeddings
+# Sentence transformer availability check is no longer needed for internal loading
 try:
     from sentence_transformers import SentenceTransformer
     SENTENCE_TRANSFORMER_AVAILABLE = True
@@ -241,27 +242,27 @@ class LatentCompressor:
     TEMPORAL_DIM = 16
     MULTIDIM_DIM = 408  # Total: 384 + 8 + 16
     
-    def __init__(self, compression_ratio: int = 16, use_mlx: bool = True):
+    def __init__(self, compression_ratio: int = 16, use_mlx: bool = True, embedding_model: Optional[Any] = None):
         """
         Initialize compressor.
         
         Args:
             compression_ratio: Target compression ratio (4, 16, 64, or 128)
             use_mlx: Use MLX for Apple Silicon acceleration
+            embedding_model: External embedding model (must implement encode method)
         """
         self.compression_ratio = compression_ratio
         self.use_mlx = use_mlx and MLX_AVAILABLE
         
-        # Load sentence transformer model (lightweight, on-device)
-        if SENTENCE_TRANSFORMER_AVAILABLE:
-            # Using all-MiniLM-L6-v2: 384-dim, fast, good quality
-            self.encoder = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
-            self.embedding_dim = 384
-            logger.info("Loaded sentence-transformers/all-MiniLM-L6-v2")
+        # Use provided model or fallback
+        if embedding_model:
+            self.encoder = embedding_model
+            self.embedding_dim = 384  # Assuming standard size, or could inspect model
+            logger.info(f"Using provided external embedding model: {type(embedding_model).__name__}")
         else:
             self.encoder = None
             self.embedding_dim = 384
-            logger.warning("sentence-transformers not available. Using fallback hash compression. Install: pip install sentence-transformers")
+            logger.warning("No embedding model provided. Using fallback hash compression. Provide an embedding_model for semantic compression.")
         
         # Binary quantization for 32x compression (384 float32 → 48 bytes)
         self.use_binary_quantization = True
@@ -326,8 +327,10 @@ class LatentCompressor:
             
         else:
             # Fallback: Hash-based
-            semantic_hash = hashlib.sha256(exchange_text.encode()).digest()
-            float_vector = np.frombuffer(semantic_hash, dtype=np.float32)[:self.embedding_dim]
+            # Use deterministic random generation based on hash to produce full 384d vector
+            seed = int(hashlib.sha256(exchange_text.encode()).hexdigest(), 16) % (2**32)
+            rng = np.random.RandomState(seed)
+            float_vector = rng.randn(self.embedding_dim).astype(np.float32)
             float_vector = float_vector / (np.linalg.norm(float_vector) + 1e-8)
         
         # Smart binary quantization: only use if it actually compresses
@@ -397,8 +400,10 @@ class LatentCompressor:
                 )
         else:
             # Fallback: Hash-based
-            semantic_hash = hashlib.sha256(exchange_text.encode()).digest()
-            semantic_vec = np.frombuffer(semantic_hash, dtype=np.float32)[:self.SEMANTIC_DIM]
+            # Use deterministic random generation based on hash to produce full 384d vector
+            seed = int(hashlib.sha256(exchange_text.encode()).hexdigest(), 16) % (2**32)
+            rng = np.random.RandomState(seed)
+            semantic_vec = rng.randn(self.SEMANTIC_DIM).astype(np.float32)
             semantic_vec = semantic_vec / (np.linalg.norm(semantic_vec) + 1e-8)
         
         # Ensure semantic_vec is numpy array

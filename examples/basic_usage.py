@@ -17,11 +17,23 @@ def main():
     print("KAIROS Memory - Basic Usage Example")
     print("=" * 60)
     
+    # Initialize embedding model (optional but recommended for semantic search)
+    embedding_model = None
+    try:
+        from sentence_transformers import SentenceTransformer
+        print("Loading embedding model...")
+        embedding_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+        print("✅ Embedding model loaded")
+    except ImportError:
+        print("⚠️  sentence-transformers not installed. Using fallback hash encoding.")
+        print("   To enable semantic search: pip install sentence-transformers")
+
     # Initialize memory system
     memory = KAIROSMemory(
         storage_path="./example_memory",
         use_multidim=True,
-        enable_feedback=True
+        enable_feedback=True,
+        embedding_model=embedding_model
     )
     
     # Store conversation exchanges with LONG text to demonstrate compression

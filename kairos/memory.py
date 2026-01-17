@@ -6,7 +6,7 @@ Standalone, importable memory system for GenAI applications.
 Combines CLaRa-inspired latent compression with efficient vector retrieval.
 """
 import time
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union, Any
 from collections import deque
 import numpy as np
 
@@ -48,7 +48,8 @@ class KAIROSMemory:
         use_multidim: bool = True,
         enable_feedback: bool = True,
         working_memory_limit: int = 20,
-        short_term_limit: int = 50
+        short_term_limit: int = 50,
+        embedding_model: Optional[Any] = None
     ):
         """
         Initialize KAIROS memory system.
@@ -60,6 +61,7 @@ class KAIROSMemory:
             enable_feedback: Enable generator feedback loop for improving retrieval
             working_memory_limit: Max items in working memory
             short_term_limit: Max items in short-term buffer
+            embedding_model: External embedding model (must implement encode method)
         """
         self.storage_path = storage_path
         self.use_multidim = use_multidim
@@ -71,8 +73,8 @@ class KAIROSMemory:
         self.short_term_memory = deque(maxlen=short_term_limit)
         
         # KAIROS components
-        self.compressor = LatentCompressor(compression_ratio=16)
-        self.query_encoder = QueryEncoder()
+        self.compressor = LatentCompressor(compression_ratio=16, embedding_model=embedding_model)
+        self.query_encoder = QueryEncoder(embedding_model=embedding_model)
         
         # Storage backend (pluggable)
         self.latent_store = get_backend(backend, storage_path)
