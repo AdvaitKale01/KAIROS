@@ -1,17 +1,25 @@
 # KAIROS Memory
-
 **Knowledge-Augmented Intelligent Retrieval and Organizational System**
 
-A standalone, importable memory system for GenAI applications. Provides latent compression with efficient vector retrieval.
+> "RAG gives agents a library. KAIROS gives them a life."
 
-## Features
+KAIROS is not just a vector database. It is a **Cognitive Memory Layer** designed to give AI agents **true episodic memory** and **emotional context**, going far beyond static RAG retrieval.
 
-- 🧠 **Multi-dimensional encoding** - Semantic (384d) + Emotional (8d) + Temporal (16d) = 408d vectors
-- ⚡ **Pluggable backends** - NumPy (default), ChromaDB, or custom
-- 🔄 **Generator feedback loop** - Learns from usage patterns to improve retrieval
-- 💾 **Persistent storage** - Memories are automatically saved to disk
-- 🍎 **Apple Silicon optimized** - Optional MLX acceleration on M-series chips
-- 🖥️ **Nvidia GPU optimized** - Optional CUDA acceleration on Nvidia GPUs
+While traditional systems stuff prompts with raw text chunks, KAIROS mimics human memory: compressing experiences into latent patterns, storing the *semantic and emotional* essence of interactions, and learning which memories actually matter over time.
+
+## Why KAIROS?
+
+*   🧠 **True Episodic Memory**: Stores "User said X, I replied Y" as a coherent event, not fragmented text chunks.
+*   ❤️ **Emotional Intelligence**: Encodes **8-dimensional emotional state** (Joy, Trust, Fear, etc.) into every memory, allowing agents to recall *how* a conversation felt.
+*   ⏳ **Dynamic Learning**: Unlike static RAG, KAIROS has a feedback loop. Using a memory strengthens it; ignoring it causes it to fade.
+*   🚀 **Hardware Agnostic**: Runs on **NVIDIA CUDA**, **Apple Silicon (MLX)**, **Intel IPEX**, or pure CPU.
+
+## Core Features
+
+- **Latent Compression**: Compresses lengthy exchanges into compact 408d vectors (384d Semantic + 8d Emotional + 16d Temporal).
+- **Pluggable Backends**: Use efficient NumPy (default) or scale with ChromaDB.
+- **Generator Feedback**: System creates a closed loop where the agent's usage optimizes future retrieval.
+- **Persistent & Portable**: Memories are automatically saved to disk and technically portable between models.
 
 ## Installation
 
