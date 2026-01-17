@@ -2,7 +2,7 @@
 
 **Knowledge-Augmented Intelligent Retrieval and Organizational System**
 
-A standalone, importable memory system for GenAI applications. Provides CLaRa-inspired latent compression with efficient vector retrieval.
+A standalone, importable memory system for GenAI applications. Provides latent compression with efficient vector retrieval.
 
 ## Features
 
@@ -11,6 +11,7 @@ A standalone, importable memory system for GenAI applications. Provides CLaRa-in
 - 🔄 **Generator feedback loop** - Learns from usage patterns to improve retrieval
 - 💾 **Persistent storage** - Memories are automatically saved to disk
 - 🍎 **Apple Silicon optimized** - Optional MLX acceleration on M-series chips
+- 🖥️ **Nvidia GPU optimized** - Optional CUDA acceleration on Nvidia GPUs
 
 ## Installation
 
@@ -96,41 +97,117 @@ class PineconeStore(BaseStore):
 memory = KAIROSMemory(backend=PineconeStore())
 ```
 
-## Migrating from Standard RAG
+## LangChain & LangGraph Support
 
-If you are coming from a traditional RAG setup (LangChain, LlamaIndex, etc.), KAIROS works differently.
+KAIROS provides native adapters for LangChain and LangGraph in `kairos.integrations`.
 
-| Feature | Standard RAG | KAIROS |
-|---------|-------------|--------|
-| **Unit** | Text Chunk | Consolidated Memory (Use + Response) |
-| **Storage** | Raw Embeddings | Latent Compressed Tokens (up to 128x smaller) |
-| **Context** | Semantic only | Semantic + Emotional + Temporal (408d) |
-| **Learning** | None (Static) | Feedback Loop (Learns from usage) |
+### Installation
 
-### Migration Pattern
+```bash
+pip install -e ".[langchain]"
+```
 
-**The Old Way (Standard RAG):**
-1. Split text into 500-token chunks.
-2. Embed each chunk.
-3. Retrieve chunks and concatenate.
-
-**The KAIROS Way:**
-1. Pass full interaction (User + Assistant).
-2. KAIROS compresses it into a single latent token.
-3. Retrieve "memories" (not chunks).
+### 1. Agents & Chat Memory
+Use `KairosChatMemory` to give any LangChain agent persistent, episodic memory.
 
 ```python
-# Don't do this manually anymore:
-# chunks = text_splitter.split(text)
-# vector_store.add(chunks)
+from langchain.chains import ConversationChain
+from langchain.llms import OpenAI
+from kairos import KAIROSMemory
+from kairos.integrations import KairosChatMemory
 
-# Do this:
-memory.consolidate_exchange(
-    user_msg="complex user query",
-    assistant_msg="detailed assistant response",
-    importance=0.9
+# Initialize Core
+k_mem = KAIROSMemory(embedding_model=...)
+
+# Wrap for LangChain
+memory = KairosChatMemory(
+    memory=k_mem,
+    memory_key="history",  # Key used in PromptTemplate
+    k_retrieval=3          # How many past memories to inject
 )
+
+# Run Chain
+chain = ConversationChain(llm=OpenAI(), memory=memory)
+chain.predict(input="My name is Alice.") 
+# -> Saved to KAIROS automatically
 ```
+
+### 2. Custom RAG Pipelines
+Use `KairosRetriever` or `KairosVectorStore` for custom LCEL chains.
+
+```python
+from kairos.integrations import KairosRetriever
+
+retriever = KairosRetriever(memory=k_mem, k=5)
+docs = retriever.invoke("What does Alice like?")
+```
+
+## Migrating from Standard RAG
+
+Moving from a traditional "Chunk-and-Retrieve" RAG system (like `vectorstore.add_documents(chunks)`) requires a shift in thinking. KAIROS is an **Episodic Memory System**, not just a document store.
+
+### The Conceptual Shift
+
+| Traditional RAG | KAIROS Memory |
+|-----------------|---------------|
+| **Unit of Storage** | Arbitrary Text Chunk (e.g. 500 chars) | **Interaction Event** (User query + Assistant response) |
+| **Context Window** | Fills with raw text snippets | Fills with **Synthesized Memories** |
+| **Retrieval Query** | Matches exact text keywords/semantics | Matches **User Intent** & **Semantic Meaning** |
+| **Vector Size** | Varies (e.g. 1536d) | **Compressed (408d)**: 384d Semantic + 8d Emotion + 16d Time |
+
+### Step-by-Step Migration Guide
+
+#### Phase 1: Data Strategy
+Don't just dump your Wiki/Docs into KAIROS.
+*   **Old Way**: "Here is a 5000-word PDF split into 10 chunks."
+*   **KAIROS Way**: Convert that PDF into **QA Pairs** or **Simulated Dialogues**.
+    *   *Why?* KAIROS optimizes for retrieving *answers* based on *questions*, not just matching text patterns.
+
+#### Phase 2: Code Migration
+
+**Scenario**: You have a list of text chunks you want to store.
+
+**❌ Old Approach (LangChain/Chroma direct):**
+```python
+texts = ["Chunk 1 content...", "Chunk 2 content..."]
+vectorstore.add_texts(texts)
+```
+
+**✅ KAIROS Approach:**
+Treat the content as something an "Assistant" would say in response to a hypothetical "User" query (or a generic prompt).
+
+```python
+texts = ["Chunk 1 content...", "Chunk 2 content..."]
+
+for text in texts:
+    memory.consolidate_exchange(
+        user_msg="Context about [Topic]",  # Provide a relevant hook/trigger
+        assistant_msg=text,                # The actual content goes here
+        importance=0.5
+    )
+```
+
+#### Phase 3: Retrieval Updates
+
+**❌ Old Approach:**
+```python
+docs = vectorstore.similarity_search("query")
+prompt = f"Context: {docs[0].page_content}..."
+```
+
+**✅ KAIROS Approach:**
+KAIROS handles the "Context" construction for you if you use the LangChain adapter.
+
+```python
+# Just map the memory variables
+result = chain.invoke({"input": "query"})
+# The PromptTemplate receives "relevant_memories" automatically
+```
+
+### Why this is better?
+1.  **Noise Reduction**: You retrieve complete thoughts/answers, not cut-off sentences.
+2.  **Temporal Grounding**: KAIROS knows *when* information was added.
+3.  **Self-Cleaning**: The feedback loop (if enabled) will "forget" chunks that are retrieved but never useful for generating good answers.
 
 ## API Reference
 

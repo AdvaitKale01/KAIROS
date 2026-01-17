@@ -8,9 +8,15 @@
 - **License Change**: Switched to **AGPL-3.0** to protect open-source contributions while preventing closed-source commercial exploitation.
 
 ### ✨ New Features
-- Added `examples/cuda_usage.py` for GPU usage.
-- Added `examples/chroma_usage.py` for ChromaDB backend.
-- Added `[transformers]`, `[chroma]`, and `[mlx]` optional dependency groups.
+- **LangChain Integration**: First-class support for LangChain & LangGraph via `kairos.integrations`.
+    - `KairosChatMemory`: Drop-in replacement for conversation memory.
+    - `KairosVectorStore`: Use KAIROS as a standard vector database.
+    - `KairosRetriever`: Lightweight retriever for LCEL chains.
+- **New Examples**:
+    - `examples/langchain_agent.py`: Full agent with memory example.
+    - `examples/cuda_usage.py`: GPU usage.
+    - `examples/chroma_usage.py`: ChromaDB backend.
+- **Dependency Groups**: Added `[langchain]`, `[transformers]`, `[chroma]`, and `[mlx]`.
 
 ### 🐛 Bug Fixes
 - Fixed hard-coded dependency on `sentence-transformers` inside `QueryEncoder` and `LatentCompressor`.
