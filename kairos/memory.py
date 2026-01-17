@@ -61,7 +61,9 @@ class KAIROSMemory:
             enable_feedback: Enable generator feedback loop for improving retrieval
             working_memory_limit: Max items in working memory
             short_term_limit: Max items in short-term buffer
-            embedding_model: External embedding model (must implement encode method)
+            embedding_model: Optional external embedding model (e.g., SentenceTransformer).
+                             Must implement an `encode(text)` method. If None, uses a 
+                             deterministic hash-based fallback (non-semantic).
         """
         self.storage_path = storage_path
         self.use_multidim = use_multidim

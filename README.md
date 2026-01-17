@@ -15,20 +15,30 @@ A standalone, importable memory system for GenAI applications. Provides CLaRa-in
 ## Installation
 
 ```bash
-# From this directory
+# Minimal installation (no semantic model included)
 pip install -e .
+
+# With optional semantic model support (recommends sentence-transformers)
+pip install -e ".[transformers]"
 
 # With ChromaDB support
 pip install -e ".[chroma]"
+
+# Install everything
+pip install -e ".[all]"
 ```
 
 ## Quick Start
 
 ```python
 from kairos import KAIROSMemory
+from sentence_transformers import SentenceTransformer
 
-# Initialize with default NumPy backend
-memory = KAIROSMemory()
+# 1. Load your own embedding model (or any class with an encode() method)
+embedding_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+
+# 2. Initialize KAIROS with the model
+memory = KAIROSMemory(embedding_model=embedding_model)
 
 # Store a conversation exchange
 memory.consolidate_exchange(
@@ -138,7 +148,22 @@ Required methods for custom backends:
 │         │                │                │        │
 │     NumpyStore      ChromaStore     CustomStore    │
 │     (default)       (optional)       (yours)       │
+│     NumpyStore      ChromaStore     CustomStore    │
+│     (default)       (optional)       (yours)       │
 └─────────────────────────────────────────────────────┘
+```
+
+## Embedding Models
+
+KAIROS allows you to inject *any* embedding model that follows the `encode(text)` signature. This makes the package lightweight and flexible.
+
+**Recommended:** `sentence-transformers/all-MiniLM-L6-v2` (fast, efficient, 384d).
+
+If no model is provided, KAIROS falls back to a **deterministic hash encoder**. This is useful for testing or non-semantic exact matching, but **not recommended for production semantic search**.
+
+```python
+# Fallback usage (warning: no semantic understanding)
+memory = KAIROSMemory(embedding_model=None)
 ```
 
 ## License

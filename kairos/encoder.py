@@ -65,7 +65,8 @@ class QueryEncoder:
         Args:
             embedding_dim: Dimension of semantic latent space
             multidim_dim: Dimension of full multi-dimensional space (408)
-            embedding_model: External embedding model (must implement encode method)
+            embedding_model: Optional external embedding model. If None, uses
+                             hash-based fallback.
         """
         self.embedding_dim = embedding_dim
         self.multidim_dim = multidim_dim

@@ -249,7 +249,8 @@ class LatentCompressor:
         Args:
             compression_ratio: Target compression ratio (4, 16, 64, or 128)
             use_mlx: Use MLX for Apple Silicon acceleration
-            embedding_model: External embedding model (must implement encode method)
+            embedding_model: Optional external embedding model. If None, uses
+                             hash-based fallback.
         """
         self.compression_ratio = compression_ratio
         self.use_mlx = use_mlx and MLX_AVAILABLE
