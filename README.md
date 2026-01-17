@@ -96,6 +96,42 @@ class PineconeStore(BaseStore):
 memory = KAIROSMemory(backend=PineconeStore())
 ```
 
+## Migrating from Standard RAG
+
+If you are coming from a traditional RAG setup (LangChain, LlamaIndex, etc.), KAIROS works differently.
+
+| Feature | Standard RAG | KAIROS |
+|---------|-------------|--------|
+| **Unit** | Text Chunk | Consolidated Memory (Use + Response) |
+| **Storage** | Raw Embeddings | Latent Compressed Tokens (up to 128x smaller) |
+| **Context** | Semantic only | Semantic + Emotional + Temporal (408d) |
+| **Learning** | None (Static) | Feedback Loop (Learns from usage) |
+
+### Migration Pattern
+
+**The Old Way (Standard RAG):**
+1. Split text into 500-token chunks.
+2. Embed each chunk.
+3. Retrieve chunks and concatenate.
+
+**The KAIROS Way:**
+1. Pass full interaction (User + Assistant).
+2. KAIROS compresses it into a single latent token.
+3. Retrieve "memories" (not chunks).
+
+```python
+# Don't do this manually anymore:
+# chunks = text_splitter.split(text)
+# vector_store.add(chunks)
+
+# Do this:
+memory.consolidate_exchange(
+    user_msg="complex user query",
+    assistant_msg="detailed assistant response",
+    importance=0.9
+)
+```
+
 ## API Reference
 
 ### KAIROSMemory
