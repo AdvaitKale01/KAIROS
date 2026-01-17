@@ -1,0 +1,9 @@
+# Core dependencies
+numpy>=1.20.0
+sentence-transformers>=2.2.0
+
+# Optional: Apple Silicon acceleration
+# mlx>=0.0.5
+
+# Development
+# pytest>=7.0.0
