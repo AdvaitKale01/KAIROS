@@ -166,6 +166,59 @@ If no model is provided, KAIROS falls back to a **deterministic hash encoder**. 
 memory = KAIROSMemory(embedding_model=None)
 ```
 
+## Hardware Acceleration
+
+KAIROS supports multiple hardware backends depending on your platform:
+
+### NVIDIA GPU (CUDA)
+
+For NVIDIA GPUs, install PyTorch with CUDA support before loading your embedding model:
+
+```bash
+# Install PyTorch with CUDA 12.1
+pip install torch --index-url https://download.pytorch.org/whl/cu121
+
+# Then install sentence-transformers
+pip install sentence-transformers
+```
+
+```python
+from sentence_transformers import SentenceTransformer
+
+# Model will automatically use CUDA if available
+model = SentenceTransformer('all-MiniLM-L6-v2', device='cuda')
+memory = KAIROSMemory(embedding_model=model)
+```
+
+### Intel CPU (IPEX)
+
+For optimized performance on Intel CPUs:
+
+```bash
+pip install intel-extension-for-pytorch
+pip install sentence-transformers
+```
+
+```python
+import intel_extension_for_pytorch as ipex
+from sentence_transformers import SentenceTransformer
+
+model = SentenceTransformer('all-MiniLM-L6-v2')
+# Apply IPEX optimizations
+model = ipex.optimize(model)
+memory = KAIROSMemory(embedding_model=model)
+```
+
+### Apple Silicon (MLX)
+
+For M-series Macs, MLX acceleration is available:
+
+```bash
+pip install -e ".[mlx]"
+```
+
+MLX is used internally for vector operations when available.
+
 ## License
 
 MIT

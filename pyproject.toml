@@ -31,6 +31,10 @@ dependencies = [
 transformers = ["sentence-transformers>=2.2.0"]
 mlx = ["mlx>=0.0.5"]
 chroma = ["chromadb>=0.4.0"]
+# Note: For CUDA support, install PyTorch with CUDA separately:
+#   pip install torch --index-url https://download.pytorch.org/whl/cu121
+# For Intel optimizations:
+#   pip install intel-extension-for-pytorch
 dev = ["pytest>=7.0.0", "pytest-cov>=4.0.0"]
 all = ["mlx>=0.0.5", "chromadb>=0.4.0", "sentence-transformers>=2.2.0"]
 
