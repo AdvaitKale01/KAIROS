@@ -276,19 +276,19 @@ Required methods for custom backends:
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│                   KAIROSMemory                       │
+│                   KAIROSMemory                      │
 ├─────────────────────────────────────────────────────┤
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐ │
-│  │ Compressor  │  │  Backend    │  │   Encoder   │ │
-│  │  (408d)     │──│ (Pluggable) │──│   (Query)   │ │
-│  └─────────────┘  └─────────────┘  └─────────────┘ │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  │
+│  │ Compressor  │  │  Backend    │  │   Encoder   │  │
+│  │  (408d)     │──│ (Pluggable) │──│   (Query)   │  │
+│  └─────────────┘  └─────────────┘  └─────────────┘  │
 │                          │                          │
-│         ┌────────────────┼────────────────┐        │
-│         │                │                │        │
-│     NumpyStore      ChromaStore     CustomStore    │
-│     (default)       (optional)       (yours)       │
-│     NumpyStore      ChromaStore     CustomStore    │
-│     (default)       (optional)       (yours)       │
+│         ┌────────────────┼────────────────┐         │
+│         │                │                │         │
+│     NumpyStore      ChromaStore     CustomStore     │
+│     (default)       (optional)       (yours)        │
+│     NumpyStore      ChromaStore     CustomStore     │
+│     (default)       (optional)       (yours)        │
 └─────────────────────────────────────────────────────┘
 ```
 
