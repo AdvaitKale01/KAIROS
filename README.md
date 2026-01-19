@@ -21,6 +21,16 @@ While traditional systems stuff prompts with raw text chunks, KAIROS mimics huma
 - **Generator Feedback**: System creates a closed loop where the agent's usage optimizes future retrieval.
 - **Persistent & Portable**: Memories are automatically saved to disk and technically portable between models.
 
+## Cognitive Capabilities (Optional)
+
+KAIROS goes beyond standard vector storage by integrating optional **Cognitive Features** powered by your LLM:
+
+1.  **Importance Filtering**: Automatically discards trivial chit-chat (greetings, test messages) to keep memory clean.
+2.  **Hyper-Compression**: Generates concise, fact-based summaries ("User prefers dark mode") that preserve specifics while saving space.
+
+To enable these, simply pass your LLM to the `consolidate_exchange` method.
+
+
 ## Installation
 
 ```bash
@@ -49,11 +59,19 @@ embedding_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
 # 2. Initialize KAIROS with the model
 memory = KAIROSMemory(embedding_model=embedding_model)
 
-# Store a conversation exchange
+# Store a conversation exchange (basic)
 memory.consolidate_exchange(
     user_msg="What is quantum computing?",
     assistant_msg="Quantum computing uses qubits...",
     importance=0.8
+)
+
+# Store with optional Cognitive Features (requires LLM)
+# This enables Importance Filtering and Hyper-Compression
+memory.consolidate_exchange(
+    user_msg="My name is Alice and I love pizza.",
+    assistant_msg="Nice to meet you Alice!",
+    llm=my_llm_object  # Must have a .generate_text(prompt) method
 )
 
 # Retrieve relevant memories
@@ -232,7 +250,7 @@ memory = KAIROSMemory(
 
 | Method | Description |
 |--------|-------------|
-| `consolidate_exchange(user_msg, assistant_msg, importance)` | Store a conversation |
+| `consolidate_exchange(user_msg, assistant_msg, importance, llm=None)` | Store a conversation (pass `llm` for cognitive features) |
 | `retrieve_relevant(query, top_k, intent)` | Find similar memories |
 | `add_to_working(role, content)` | Add to working memory |
 | `get_working_memory()` | Get current conversation |

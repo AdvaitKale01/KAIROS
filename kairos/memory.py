@@ -130,7 +130,8 @@ class KAIROSMemory:
         user_msg: str, 
         assistant_msg: str, 
         importance: float = 0.5, 
-        metadata: Optional[Dict] = None
+        metadata: Optional[Dict] = None,
+        llm: Optional[Any] = None
     ) -> Optional[str]:
         """
         Compress and store a conversation exchange.
@@ -155,19 +156,50 @@ class KAIROSMemory:
             logger.warning(f"consolidate_exchange: importance must be between 0 and 1, got {importance}")
             importance = max(0.0, min(1.0, float(importance)))
         
+        if llm:
+            # Importance Filtering
+            if not self._is_worth_remembering(f"User: {user_msg}\nAssistant: {assistant_msg}", llm):
+                logger.info("Exchange filtered out by LLM (not worth remembering)")
+                return None
+
         store_start = time.perf_counter()
         
         # Create exchange text
         exchange_text = f"User: {user_msg}\nAssistant: {assistant_msg}"
         
+        # Hyper-Compression (Generative Summaries)
+        soft_prompt_summary = None
+        if llm:
+            try:
+                # Ask LLM for a hyper-compressed summary that PRESERVES specifics
+                prompt = f"""Compress this exchange into a fact statement (max 25 words).
+CRITICAL: Preserve ALL specific names, products, brands, numbers, places, and preferences.
+Good: "User prefers Toyota Camry over Honda Civic" | Bad: "User prefers a car"
+Good: "Meeting scheduled for 3pm Tuesday" | Bad: "Meeting scheduled"
+
+Exchange:
+{exchange_text[:500]}
+
+Fact (preserve specifics):"""
+                soft_prompt_summary = llm.generate_text(prompt, max_tokens=40).strip()
+                # Clean up if needed
+                if ":" in soft_prompt_summary: 
+                    soft_prompt_summary = soft_prompt_summary.split(":", 1)[1].strip()
+            except Exception as e:
+                logger.error(f"Hyper-compression failed: {e}")
+        
+        # Determine preview to use
+        preview = soft_prompt_summary if soft_prompt_summary else user_msg[:100]
+        
         # Build metadata
         base_metadata = {
             'type': 'exchange',
             'timestamp': time.time(),
-            'user_msg_preview': user_msg[:100],
+            'user_msg_preview': preview,
             'assistant_msg_preview': assistant_msg[:100],
             'importance': importance,
-            'exchange_length': len(exchange_text)
+            'exchange_length': len(exchange_text),
+            'is_hyper_compressed': soft_prompt_summary is not None
         }
         
         # Merge extra metadata if provided
@@ -410,3 +442,38 @@ class KAIROSMemory:
             'similarity_scores': []
         }
         logger.info("All memories cleared")
+    def _is_worth_remembering(self, exchange_text: str, llm) -> bool:
+        """
+        LLM-powered filtering to determine if a memory is worth keeping.
+        
+        Args:
+            exchange_text: The conversation exchange text
+            llm: LLM object with generate_text method
+            
+        Returns:
+            True if worth remembering, False if trivial
+        """
+        prompt = f"""Analyze this exchange. Is it worth remembering long-term?
+
+Exchange:
+{exchange_text[:300]}
+
+Worth keeping if it contains:
+- Important facts, preferences, or decisions
+- Meaningful information
+- Tasks or goals
+
+NOT worth keeping:
+- Simple greetings
+- Test messages
+- Routine chit-chat without substance
+
+Answer: YES or NO
+Decision:"""
+        
+        try:
+            decision = llm.generate_text(prompt, max_tokens=5).strip().upper()
+            # If explicit NO, return False. Otherwise default to True (safer).
+            return "NO" not in decision
+        except Exception:
+            return True
